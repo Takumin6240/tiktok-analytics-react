@@ -112,7 +112,7 @@ const PerformanceScore: React.FC<PerformanceScoreProps> = ({ data, kpis, classNa
                   {feedback.startsWith('⚠️') && <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>}
                   {feedback.startsWith('❌') && <div className="w-2 h-2 bg-red-500 rounded-full"></div>}
                 </div>
-                <p className="text-sm text-gray-700">{feedback.replace(/^[✅⚠️❌]\s*/, '')}</p>
+                <p className="text-sm text-gray-700">{feedback.replace(/^[\u2705\u26A0\u274C]\s*/, '')}</p>
               </div>
             ))}
           </div>

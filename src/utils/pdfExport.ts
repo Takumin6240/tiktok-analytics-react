@@ -4,9 +4,9 @@ import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import type { AnalyticsData, KPIMetrics, ExportOptions, PerformanceInsight } from '@/types';
 import { formatDuration } from './analytics';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+// フォント機能を一時的に無効化
 // @ts-ignore
-import { addFileToVFS, addFont } from '@/assets/fonts/NotoSansJP-VariableFont_wght-normal.js';
+// import { addFileToVFS, addFont } from '@/assets/fonts/NotoSansJP-VariableFont_wght-normal.js';
 
 /**
  * PDF生成のメインクラス
@@ -25,16 +25,16 @@ export class PDFExporter {
       format: 'a4'
     });
     
-    // NotoSansJPフォント登録
-    addFileToVFS('NotoSansJP', 'NotoSansJP-VariableFont_wght-normal');
-    addFont('NotoSansJP', 'NotoSansJP', 'normal');
-    this.pdf.setFont('NotoSansJP');
+    // NotoSansJPフォント登録（一時的に無効化）
+    // addFileToVFS('NotoSansJP', 'NotoSansJP-VariableFont_wght-normal');
+    // addFont('NotoSansJP', 'NotoSansJP', 'normal');
+    // this.pdf.setFont('NotoSansJP');
     this.setupFonts();
   }
 
   private setupFonts(): void {
     this.pdf.setFontSize(12);
-    this.pdf.setFont('NotoSansJP');
+    // this.pdf.setFont('NotoSansJP');
   }
 
   /**

@@ -3,9 +3,9 @@ import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import type { AnalyticsData, KPIMetrics, ExportOptions, PerformanceInsight } from '@/types';
 import { formatDurationShort, formatMinutes } from './analytics';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+// フォント機能を一時的に無効化
 // @ts-ignore
-import { addFileToVFS, addFont } from '@/assets/fonts/NotoSansJP-VariableFont_wght-normal.js';
+// import { addFileToVFS, addFont } from '@/assets/fonts/NotoSansJP-VariableFont_wght-normal.js';
 
 /**
  * 強化されたPDF生成クラス - TikTokライブ分析ツール完全版
@@ -39,10 +39,10 @@ export class EnhancedPDFExporter {
       format: 'a4'
     });
     
-    // NotoSansJPフォント登録
-    addFileToVFS('NotoSansJP', 'NotoSansJP-VariableFont_wght-normal');
-    addFont('NotoSansJP', 'NotoSansJP', 'normal');
-    this.pdf.setFont('NotoSansJP');
+    // NotoSansJPフォント登録（一時的に無効化）
+    // addFileToVFS('NotoSansJP', 'NotoSansJP-VariableFont_wght-normal');
+    // addFont('NotoSansJP', 'NotoSansJP', 'normal');
+    // this.pdf.setFont('NotoSansJP');
     
     // メタデータ設定
     this.setupDocument();
@@ -50,7 +50,7 @@ export class EnhancedPDFExporter {
 
   private setupDocument(): void {
     this.pdf.setFontSize(12);
-    this.pdf.setFont('NotoSansJP');
+    // this.pdf.setFont('NotoSansJP');
     this.pdf.setProperties({
       title: 'TikTok Live Analytics Report',
       subject: 'Comprehensive TikTok Live Stream Analysis',
@@ -197,7 +197,7 @@ export class EnhancedPDFExporter {
       // テキスト
       this.pdf.setTextColor(255, 255, 255);
       this.pdf.setFontSize(10);
-      this.pdf.setFont('NotoSansJP', 'normal');
+      // this.pdf.setFont('NotoSansJP', 'normal');
       this.pdf.text(`${kpi.unit} ${kpi.label}`, currentX + 3, this.currentY + 5.5);
       
       this.pdf.setTextColor(0, 0, 0);
