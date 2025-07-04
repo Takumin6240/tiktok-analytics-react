@@ -13,7 +13,6 @@ import {
 import KPICard from './KPICard';
 import AnalyticsChart from './AnalyticsChart';
 import DataTable from './DataTable';
-import PerformanceScore from './PerformanceScore';
 import DetailedStats from './DetailedStats';
 import { calculateKPIMetrics, generateChartData, generateInsights } from '@/utils/analytics';
 import { exportEnhancedPDF } from '@/utils/enhancedPdfExport';
@@ -46,18 +45,8 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
     return generateChartData(data, selectedMetric);
   }, [data, selectedMetric, isLoading]);
 
-  // PDF エクスポート（強化版）
+  // PDF エクスポート
   const handleExportPDF = async () => {
-    try {
-      await exportEnhancedPDF(data, kpis, insights);
-    } catch (error) {
-      console.error('PDF export failed:', error);
-      alert('PDFエクスポートに失敗しました。');
-    }
-  };
-
-  // 詳細レポートPDF エクスポート
-  const handleExportDetailedPDF = async () => {
     try {
       await exportEnhancedPDF(data, kpis, insights, {
         format: 'pdf',
@@ -72,8 +61,8 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
         }
       });
     } catch (error) {
-      console.error('Detailed PDF export failed:', error);
-      alert('詳細PDFエクスポートに失敗しました。');
+      console.error('PDF export failed:', error);
+      alert('PDFエクスポートに失敗しました。');
     }
   };
 
@@ -161,13 +150,6 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
           >
             <Download className="w-4 h-4" />
             <span>PDF レポート</span>
-          </button>
-          <button
-            onClick={handleExportDetailedPDF}
-            className="flex items-center space-x-2 px-4 py-2 bg-tiktok-secondary text-white rounded-lg hover:bg-tiktok-secondary/90 transition-colors"
-          >
-            <Download className="w-4 h-4" />
-            <span>詳細PDF</span>
           </button>
         </div>
       </div>
@@ -380,13 +362,6 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
       <DataTable 
         data={data} 
         onExport={handleExportCSV}
-      />
-
-      {/* パフォーマンス評価 */}
-      <PerformanceScore 
-        data={data}
-        kpis={kpis}
-        className="mt-6"
       />
 
       {/* 詳細統計 */}

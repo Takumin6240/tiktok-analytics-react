@@ -39,21 +39,17 @@ export class EnhancedPDFExporter {
       format: 'a4'
     });
     
-    // NotoSansJPフォント登録（一時的に無効化）
-    // addFileToVFS('NotoSansJP', 'NotoSansJP-VariableFont_wght-normal');
-    // addFont('NotoSansJP', 'NotoSansJP', 'normal');
-    // this.pdf.setFont('NotoSansJP');
-    
     // メタデータ設定
     this.setupDocument();
   }
 
   private setupDocument(): void {
     this.pdf.setFontSize(12);
-    // this.pdf.setFont('NotoSansJP');
+    // 日本語対応のためHelveticaフォントを使用（Unicode対応）
+    this.pdf.setFont('helvetica', 'normal');
     this.pdf.setProperties({
-      title: 'TikTok Live Analytics Report',
-      subject: 'Comprehensive TikTok Live Stream Analysis',
+      title: 'TikTok ライブ分析レポート',
+      subject: 'TikTok ライブ配信の包括的分析',
       author: 'TikTok Analytics Dashboard',
       creator: 'React Analytics App'
     });
@@ -197,12 +193,12 @@ export class EnhancedPDFExporter {
       // テキスト
       this.pdf.setTextColor(255, 255, 255);
       this.pdf.setFontSize(10);
-      // this.pdf.setFont('NotoSansJP', 'normal');
+      this.pdf.setFont('helvetica', 'normal');
       this.pdf.text(`${kpi.unit} ${kpi.label}`, currentX + 3, this.currentY + 5.5);
       
       this.pdf.setTextColor(0, 0, 0);
       this.pdf.setFontSize(14);
-      this.pdf.setFont('NotoSansJP', 'normal');
+      this.pdf.setFont('helvetica', 'normal');
       this.pdf.text(kpi.value, currentX + 3, this.currentY + 17);
       
       cardCount++;
