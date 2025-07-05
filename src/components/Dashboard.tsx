@@ -50,7 +50,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
 
 
 
-  // スクリーンショットPDFエクスポート
+  // PDFエクスポート
   const handleScreenshotPdf = () => {
     setShowScreenshotModal(true);
   };
@@ -119,7 +119,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
             className="flex items-center space-x-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-lg font-semibold shadow-lg"
           >
             <Camera className="w-5 h-5" />
-            <span>スクリーンショットPDF</span>
+            <span>PDF</span>
           </button>
           <button
             onClick={handleExportXLSX}

@@ -19,10 +19,10 @@ const ScreenshotExportModal: React.FC<ScreenshotExportModalProps> = ({ isOpen, o
       
       await generateScreenshotPdf(exportType, filename);
       
-      alert(`${exportType === 'full' ? '全セクション' : 'トレンド分析'}のスクリーンショットPDFが生成されました！`);
+      alert(`${exportType === 'full' ? '全セクション' : 'トレンド分析'}のPDFが生成されました！`);
     } catch (error) {
       console.error('Screenshot PDF generation error:', error);
-      alert('スクリーンショットPDFの生成に失敗しました。詳細はコンソールをご確認ください。');
+      alert('PDFの生成に失敗しました。詳細はコンソールをご確認ください。');
     } finally {
       setIsGenerating(false);
       onClose();
@@ -35,7 +35,7 @@ const ScreenshotExportModal: React.FC<ScreenshotExportModalProps> = ({ isOpen, o
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
         <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-lg font-semibold">スクリーンショットPDF出力</h2>
+          <h2 className="text-lg font-semibold">PDF出力</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -93,17 +93,6 @@ const ScreenshotExportModal: React.FC<ScreenshotExportModalProps> = ({ isOpen, o
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
-              </div>
-              <div className="text-sm text-green-800">
-                <p className="font-medium">自動PDF生成機能（横向きA4）</p>
-                <ul className="mt-1 space-y-1 text-xs">
-                  <li>• 各セクションを自動的にキャプチャしてPDF化</li>
-                  <li>• 横向きA4サイズで最適表示</li>
-                  <li>• スクリーンショットのみ、1ページ1セクション</li>
-                  <li>• トレンド分析では各指標を自動切り替え</li>
-                  <li>• 高解像度でクリアな画質</li>
-                  <li>• 生成には数分かかる場合があります</li>
-                </ul>
               </div>
             </div>
           </div>
