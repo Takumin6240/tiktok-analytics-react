@@ -29,6 +29,8 @@ interface AnalyticsChartProps {
   showGrid?: boolean;
   animate?: boolean;
   className?: string;
+  'data-chart'?: string;
+  'data-chart-title'?: string;
 }
 
 const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
@@ -43,6 +45,8 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
   showGrid = true,
   animate = true,
   className = '',
+  'data-chart': dataChart,
+  'data-chart-title': dataChartTitle,
 }) => {
   const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | 'all'>('all');
 
@@ -215,7 +219,11 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
   };
 
   return (
-    <div className={`bg-white rounded-xl border border-gray-200 p-6 shadow-sm ${className}`}>
+    <div 
+      className={`bg-white rounded-xl border border-gray-200 p-6 shadow-sm ${className}`}
+      data-chart={dataChart}
+      data-chart-title={dataChartTitle}
+    >
       {/* ヘッダー */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">

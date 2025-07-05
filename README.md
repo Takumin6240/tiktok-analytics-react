@@ -46,8 +46,7 @@ React + TypeScript で構築された、TikTokライブ配信の包括的な分�
 - **Tailwind Merge**: 動的なスタイル管理
 
 ### エクスポート
-- **jsPDF**: PDF生成ライブラリ
-- **html2canvas**: HTML要素のキャプチャ
+- エクスポート機能は現在メンテナンス中です
 
 ### デプロイメント
 - **Docker**: コンテナ化

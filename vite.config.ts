@@ -22,7 +22,7 @@ export default defineConfig({
         manualChunks: {
           vendor: ['react', 'react-dom'],
           charts: ['recharts'],
-          utils: ['papaparse', 'date-fns', 'jspdf', 'html2canvas'],
+          utils: ['papaparse', 'date-fns'],
         },
       },
     },

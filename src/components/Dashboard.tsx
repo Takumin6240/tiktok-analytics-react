@@ -5,17 +5,17 @@ import {
   Users, 
   Eye, 
   TrendingUp, 
-  Download,
   Calendar,
   Activity,
-  Clock
+  Clock,
+  Download
 } from 'lucide-react';
 import KPICard from './KPICard';
 import AnalyticsChart from './AnalyticsChart';
 import DataTable from './DataTable';
 import DetailedStats from './DetailedStats';
 import { calculateKPIMetrics, generateChartData, generateInsights } from '@/utils/analytics';
-import { exportComponentBasedPDF } from '@/utils/componentBasedPdfExport';
+import { exportEnhancedExcel } from '@/utils/enhancedExcelExport';
 import type { AnalyticsData, KPIMetrics, PerformanceInsight } from '@/types';
 
 interface DashboardProps {
@@ -45,59 +45,27 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
     return generateChartData(data, selectedMetric);
   }, [data, selectedMetric, isLoading]);
 
-  // PDF エクスポート (新しいコンポーネントベース)
-  const handleExportPDF = async () => {
+
+
+  // XLSX エクスポート
+  const handleExportXLSX = async () => {
     try {
-      await exportComponentBasedPDF(data, kpis, insights, {
-        format: 'pdf',
+      const result = await exportEnhancedExcel(data, {
         includeCharts: true,
-        sections: {
-          summary: true,
-          engagement: true,
-          revenue: true,
-          activity: true,
-          viewer: true,
-          trends: true,
-        }
+        includeAnalysis: true
       });
+      
+      if (result.success) {
+        // 成功時のメッセージ
+        alert('エクスポートが完了しました！ダウンロードフォルダをご確認ください。');
+      } else {
+        // エラー時のメッセージ
+        alert(`エクスポートエラー: ${result.error || '不明なエラー'}`);
+      }
     } catch (error) {
-      console.error('PDF export failed:', error);
-      const errorMessage = error instanceof Error ? error.message : '不明なエラー';
-      alert('PDFエクスポートに失敗しました: ' + errorMessage);
+      console.error('Excel export error:', error);
+      alert('エクスポートに失敗しました。');
     }
-  };
-
-  // CSV エクスポート
-  const handleExportCSV = () => {
-    // CSV エクスポート実装
-    const csvData = data.engagement.map((item, index) => ({
-      date: item.dateString,
-      diamonds: data.revenue[index]?.diamonds || 0,
-      likes: item.likes,
-      followers: item.newFollowers,
-      views: data.viewer[index]?.viewCount || 0,
-      liveTime: data.activity[index]?.liveTime || 0,
-      liveCount: data.activity[index]?.liveCount || 0,
-    }));
-
-    const csvContent = [
-      ['日付', 'ダイヤモンド', 'いいね', '新規フォロワー', '視聴数', '配信時間', '配信回数'],
-      ...csvData.map(row => [
-        row.date,
-        row.diamonds,
-        row.likes,
-        row.followers,
-        row.views,
-        Math.round(row.liveTime / 3600), // 時間に変換
-        row.liveCount,
-      ])
-    ].map(row => row.join(',')).join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `tiktok-analytics-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
   };
 
   if (isLoading) {
@@ -139,24 +107,22 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
         
         <div className="flex items-center space-x-3">
           <button
-            onClick={handleExportCSV}
-            className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            onClick={handleExportXLSX}
+            className="flex items-center space-x-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-lg font-semibold shadow-lg"
           >
-            <Download className="w-4 h-4" />
-            <span>CSV</span>
-          </button>
-          <button
-            onClick={handleExportPDF}
-            className="flex items-center space-x-2 px-4 py-2 bg-tiktok-primary text-white rounded-lg hover:bg-tiktok-primary/90 transition-colors"
-          >
-            <Download className="w-4 h-4" />
-            <span>PDF レポート</span>
+            <Download className="w-5 h-5" />
+            <span>xlsx出力</span>
           </button>
         </div>
       </div>
 
       {/* KPI カード */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-gray-900">KPI指標</h2>
+        </div>
+        <div className="space-y-6" data-kpi-section="true">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard
           title="総ダイヤモンド"
           value={kpis.totalDiamonds}
@@ -289,12 +255,16 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
           subtitle="平均"
           data-kpi-card="avg-stream-time"
         />
+        </div>
+        </div>
       </div>
 
       {/* パフォーマンス洞察 */}
       {insights.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm" data-insight="container">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">パフォーマンス洞察</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">パフォーマンス洞察</h2>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {insights.map((insight, index) => (
               <div
@@ -319,75 +289,91 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
       )}
 
       {/* チャート選択 */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-gray-900">トレンド分析</h2>
-          <div className="flex items-center space-x-4">
-            <select
-              value={selectedMetric}
-              onChange={(e) => setSelectedMetric(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-tiktok-primary focus:border-transparent"
-            >
-              <option value="diamonds">ダイヤモンド</option>
-              <option value="likes">いいね</option>
-              <option value="followers">新規フォロワー</option>
-              <option value="views">視聴数</option>
-              <option value="liveTime">配信時間</option>
-              <option value="concurrent">同時視聴者</option>
-            </select>
-          </div>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-gray-900">トレンド分析</h2>
         </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm" data-chart="main-chart">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-gray-900">メインチャート</h3>
+            <div className="flex items-center space-x-4">
+              <select
+                value={selectedMetric}
+                onChange={(e) => setSelectedMetric(e.target.value)}
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-tiktok-primary focus:border-transparent"
+              >
+                <option value="diamonds">ダイヤモンド</option>
+                <option value="likes">いいね</option>
+                <option value="followers">新規フォロワー</option>
+                <option value="views">視聴数</option>
+                <option value="liveTime">配信時間</option>
+                <option value="concurrent">同時視聴者</option>
+              </select>
+            </div>
+          </div>
 
-        <AnalyticsChart
-          title={`${selectedMetric === 'diamonds' ? 'ダイヤモンド' : 
-                   selectedMetric === 'likes' ? 'いいね' :
-                   selectedMetric === 'followers' ? '新規フォロワー' :
-                   selectedMetric === 'views' ? '視聴数' :
-                   selectedMetric === 'liveTime' ? '配信時間' :
-                   '同時視聴者'} の推移`}
-          data={chartData}
-          type={selectedMetric === 'diamonds' ? 'bar' : 'line'}
-          color={selectedMetric === 'diamonds' ? '#ff0050' : '#00f2ea'}
-          height={400}
-          data-chart="main-chart"
-          data-chart-title={`${selectedMetric} trend`}
-        />
+          <AnalyticsChart
+            title={`${selectedMetric === 'diamonds' ? 'ダイヤモンド' : 
+                     selectedMetric === 'likes' ? 'いいね' :
+                     selectedMetric === 'followers' ? '新規フォロワー' :
+                     selectedMetric === 'views' ? '視聴数' :
+                     selectedMetric === 'liveTime' ? '配信時間' :
+                     '同時視聴者'} の推移`}
+            data={chartData}
+            type={selectedMetric === 'diamonds' ? 'bar' : 'line'}
+            color={selectedMetric === 'diamonds' ? '#ff0050' : '#00f2ea'}
+            height={400}
+          />
+        </div>
       </div>
 
       {/* 詳細チャート */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <AnalyticsChart
-          title="エンゲージメント推移"
-          data={generateChartData(data, 'likes')}
-          type="area"
-          color="#ff0050"
-          height={300}
-          data-chart="engagement-chart"
-          data-chart-title="Engagement Trend"
-        />
-        <AnalyticsChart
-          title="視聴者数推移"
-          data={generateChartData(data, 'views')}
-          type="line"
-          color="#00f2ea"
-          height={300}
-          data-chart="viewer-chart"
-          data-chart-title="Viewer Trend"
-        />
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-gray-900">詳細チャート</h2>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm" data-chart="engagement-chart">
+          <AnalyticsChart
+            title="エンゲージメント推移"
+            data={generateChartData(data, 'likes')}
+            type="area"
+            color="#ff0050"
+            height={300}
+          />
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm" data-chart="viewer-chart">
+          <AnalyticsChart
+            title="視聴者数推移"
+            data={generateChartData(data, 'views')}
+            type="line"
+            color="#00f2ea"
+            height={300}
+          />
+        </div>
+        </div>
       </div>
 
       {/* データテーブル */}
-      <DataTable 
-        data={data} 
-        onExport={handleExportCSV}
-      />
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-gray-900">データテーブル</h2>
+        </div>
+        <DataTable 
+          data={data}
+        />
+      </div>
 
       {/* 詳細統計 */}
-      <DetailedStats 
-        data={data}
-        kpis={kpis}
-        className="mt-6"
-      />
+      <div className="space-y-4 mt-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-gray-900">詳細統計</h2>
+        </div>
+        <DetailedStats 
+          data={data}
+          kpis={kpis}
+        />
+      </div>
     </div>
   );
 };

@@ -4,6 +4,7 @@ import FileUpload from './components/FileUpload';
 import Dashboard from './components/Dashboard';
 import type { FileUploadResult, AnalyticsData } from './types';
 
+
 interface Alert {
   id: string;
   type: 'success' | 'error' | 'warning' | 'info';
@@ -196,9 +197,9 @@ function App() {
                 <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                   <CheckCircle className="w-6 h-6 text-green-600" />
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-2">PDFエクスポート</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">リアルタイム更新</h3>
                 <p className="text-sm text-gray-600">
-                  分析結果をPDFレポートとして出力し、チャートやデータテーブルを含む完全なレポートを生成します。
+                  データの変更に応じてチャートやKPIが自動的に更新され、最新の分析結果を表示します。
                 </p>
               </div>
             </div>
@@ -217,7 +218,7 @@ function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center text-gray-500 text-sm">
             <p>TikTok ライブ分析ツール - データドリブンな配信戦略をサポート</p>
-            <p className="mt-2">© 2024 TikTok Analytics Dashboard. Built with React + TypeScript.</p>
+            <p className="mt-2">© 2025 TikTok Analytics Dashboard. Built with React + TypeScript.</p>
           </div>
         </div>
       </footer>

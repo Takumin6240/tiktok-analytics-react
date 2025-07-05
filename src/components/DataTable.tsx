@@ -1,178 +1,181 @@
 import React, { useState, useMemo } from 'react';
 import { ChevronUp, ChevronDown, Download, Search, Calendar } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import type { AnalyticsData } from '@/types';
 
 interface DataTableProps {
   data: AnalyticsData;
-  onExport?: () => void;
   className?: string;
 }
 
 interface TableRow {
   date: string;
-  diamonds: number;
-  likes: number;
+  giftGivers: number;
   followers: number;
-  views: number;
+  commenters: number;
+  likes: number;
+  shares: number;
   liveTime: number;
   liveCount: number;
-  giftGivers: number;
-  commenters: number;
-  shares: number;
+  views: number;
   uniqueViewers: number;
+  avgViewTime: number;
   maxConcurrent: number;
   avgConcurrent: number;
-  avgViewTime: number;
+  diamonds: number;
 }
 
 type SortKey = keyof TableRow;
 type SortDirection = 'asc' | 'desc';
 
-const DataTable: React.FC<DataTableProps> = ({ data, onExport, className = '' }) => {
+const DataTable: React.FC<DataTableProps> = ({ data, className = '' }) => {
   const [sortKey, setSortKey] = useState<SortKey>('date');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
   // データを統合してテーブル行を作成
   const tableData = useMemo(() => {
-    const rows: TableRow[] = [];
     const dateMap = new Map<string, Partial<TableRow>>();
 
-    // 各データソースから日付をキーにしてデータを統合
+    // 全てのデータソースから日付を収集
+    [...data.engagement, ...data.revenue, ...data.activity, ...data.viewer]
+      .forEach(item => {
+        const dateKey = item.dateString;
+        if (!dateMap.has(dateKey)) {
+          dateMap.set(dateKey, { date: dateKey });
+        }
+      });
+
+    // エンゲージメントデータを統合
     data.engagement.forEach(item => {
-      const key = item.dateString;
-      if (!dateMap.has(key)) {
-        dateMap.set(key, { date: key });
+      const row = dateMap.get(item.dateString);
+      if (row) {
+        row.giftGivers = item.giftGivers;
+        row.followers = item.newFollowers;
+        row.commenters = item.commenters;
+        row.likes = item.likes;
+        row.shares = item.shares;
       }
-      const row = dateMap.get(key)!;
-      row.likes = item.likes;
-      row.followers = item.newFollowers;
-      row.giftGivers = item.giftGivers;
-      row.commenters = item.commenters;
-      row.shares = item.shares;
     });
 
+    // 収益データを統合
     data.revenue.forEach(item => {
-      const key = item.dateString;
-      if (!dateMap.has(key)) {
-        dateMap.set(key, { date: key });
+      const row = dateMap.get(item.dateString);
+      if (row) {
+        row.diamonds = item.diamonds;
       }
-      const row = dateMap.get(key)!;
-      row.diamonds = item.diamonds;
     });
 
+    // アクティビティデータを統合
     data.activity.forEach(item => {
-      const key = item.dateString;
-      if (!dateMap.has(key)) {
-        dateMap.set(key, { date: key });
+      const row = dateMap.get(item.dateString);
+      if (row) {
+        row.liveTime = item.liveTime;
+        row.liveCount = item.liveCount;
       }
-      const row = dateMap.get(key)!;
-      row.liveTime = item.liveTime;
-      row.liveCount = item.liveCount;
     });
 
+    // 視聴者データを統合
     data.viewer.forEach(item => {
-      const key = item.dateString;
-      if (!dateMap.has(key)) {
-        dateMap.set(key, { date: key });
+      const row = dateMap.get(item.dateString);
+      if (row) {
+        row.views = item.viewCount;
+        row.uniqueViewers = item.uniqueViewers;
+        row.avgViewTime = item.avgViewTime;
+        row.maxConcurrent = item.maxConcurrent;
+        row.avgConcurrent = item.avgConcurrent;
       }
-      const row = dateMap.get(key)!;
-      row.views = item.viewCount;
-      row.uniqueViewers = item.uniqueViewers;
-      row.maxConcurrent = item.maxConcurrent;
-      row.avgConcurrent = item.avgConcurrent;
-      row.avgViewTime = item.avgViewTime;
     });
 
-    // 完全なデータ行を作成
+    // 完全なテーブル行を作成
+    const rows: TableRow[] = [];
     dateMap.forEach((row, date) => {
       rows.push({
         date,
-        diamonds: row.diamonds || 0,
-        likes: row.likes || 0,
+        giftGivers: row.giftGivers || 0,
         followers: row.followers || 0,
-        views: row.views || 0,
+        commenters: row.commenters || 0,
+        likes: row.likes || 0,
+        shares: row.shares || 0,
         liveTime: row.liveTime || 0,
         liveCount: row.liveCount || 0,
-        giftGivers: row.giftGivers || 0,
-        commenters: row.commenters || 0,
-        shares: row.shares || 0,
+        views: row.views || 0,
         uniqueViewers: row.uniqueViewers || 0,
+        avgViewTime: row.avgViewTime || 0,
         maxConcurrent: row.maxConcurrent || 0,
         avgConcurrent: row.avgConcurrent || 0,
-        avgViewTime: row.avgViewTime || 0,
+        diamonds: row.diamonds || 0,
       });
     });
 
     return rows;
   }, [data]);
 
-  // フィルタリングとソート
-  const filteredAndSortedData = useMemo(() => {
-    let filtered = tableData;
-
-    // 検索フィルタ
-    if (searchTerm) {
-      filtered = filtered.filter(row => 
-        row.date.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // ソート
-    filtered.sort((a, b) => {
+  // ソート関数
+  const sortedData = useMemo(() => {
+    const sorted = [...tableData].sort((a, b) => {
       const aValue = a[sortKey];
       const bValue = b[sortKey];
       
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
-        return sortDirection === 'asc' 
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
+      if (sortKey === 'date') {
+        const aDate = new Date(aValue as string);
+        const bDate = new Date(bValue as string);
+        const comparison = aDate.getTime() - bDate.getTime();
+        return sortDirection === 'asc' ? comparison : -comparison;
       }
       
       if (typeof aValue === 'number' && typeof bValue === 'number') {
-        return sortDirection === 'asc' 
-          ? aValue - bValue
-          : bValue - aValue;
+        const comparison = aValue - bValue;
+        return sortDirection === 'asc' ? comparison : -comparison;
       }
       
-      return 0;
+      const comparison = String(aValue).localeCompare(String(bValue));
+      return sortDirection === 'asc' ? comparison : -comparison;
     });
 
-    return filtered;
-  }, [tableData, searchTerm, sortKey, sortDirection]);
+    return sorted;
+  }, [tableData, sortKey, sortDirection]);
+
+  // フィルタリング
+  const filteredData = useMemo(() => {
+    if (!searchTerm) return sortedData;
+    return sortedData.filter(row => 
+      row.date.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [sortedData, searchTerm]);
 
   // ページネーション
   const paginatedData = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
-    return filteredAndSortedData.slice(startIndex, startIndex + pageSize);
-  }, [filteredAndSortedData, currentPage, pageSize]);
+    return filteredData.slice(startIndex, startIndex + pageSize);
+  }, [filteredData, currentPage, pageSize]);
 
-  const totalPages = Math.ceil(filteredAndSortedData.length / pageSize);
+  const totalPages = Math.ceil(filteredData.length / pageSize);
 
+  // ソート処理
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
       setSortKey(key);
-      setSortDirection('desc');
+      setSortDirection('asc');
     }
+    setCurrentPage(1);
   };
 
-  const SortIcon = ({ column }: { column: SortKey }) => {
-    if (sortKey !== column) {
-      return <ChevronUp className="w-4 h-4 text-gray-300" />;
-    }
-    return sortDirection === 'asc' 
-      ? <ChevronUp className="w-4 h-4 text-tiktok-primary" />
-      : <ChevronDown className="w-4 h-4 text-tiktok-primary" />;
-  };
-
-  const formatValue = (value: number, type: 'number' | 'time' | 'currency' = 'number') => {
+  // 値のフォーマット
+  const formatValue = (value: number | string, type: 'number' | 'time' | 'currency' | 'string' = 'number') => {
+    if (type === 'string') return value;
+    if (typeof value !== 'number') return value;
+    
     switch (type) {
-      case 'time':
-        return `${Math.round(value / 3600)}h ${Math.round((value % 3600) / 60)}m`;
+      case 'time': {
+        const hours = Math.floor(value / 3600);
+        const minutes = Math.floor((value % 3600) / 60);
+        return `${hours}h ${minutes}m`;
+      }
       case 'currency':
         return `${value.toLocaleString()}💎`;
       default:
@@ -180,15 +183,59 @@ const DataTable: React.FC<DataTableProps> = ({ data, onExport, className = '' })
     }
   };
 
+  // XLSX エクスポート
+  const handleExportXLSX = () => {
+    const exportData = filteredData.map(row => ({
+      '日付': row.date,
+      'ギフト贈呈者': row.giftGivers,
+      '新規フォロワー': row.followers,
+      'コメントした視聴者': row.commenters,
+      'いいね': row.likes,
+      'シェア': row.shares,
+      'LIVE時間': formatValue(row.liveTime, 'time'),
+      'LIVEの合計数': row.liveCount,
+      '視聴数': row.views,
+      'ユニーク視聴者数': row.uniqueViewers,
+      '平均視聴時間': formatValue(row.avgViewTime, 'time'),
+      '最高同時視聴者数': row.maxConcurrent,
+      '平均同時視聴者数': row.avgConcurrent,
+      'ダイヤモンド': row.diamonds
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'TikTokAnalytics');
+    
+    const filename = `tiktok-analytics-${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, filename);
+  };
+
+  // ソートアイコン
+  const SortIcon = ({ column }: { column: SortKey }) => {
+    if (sortKey !== column) {
+      return <ChevronUp className="w-4 h-4 text-gray-400" />;
+    }
+    return sortDirection === 'asc' 
+      ? <ChevronUp className="w-4 h-4 text-tiktok-primary" />
+      : <ChevronDown className="w-4 h-4 text-tiktok-primary" />;
+  };
+
+  // カラム定義
   const columns = [
     { key: 'date' as SortKey, label: '日付', type: 'string' },
-    { key: 'diamonds' as SortKey, label: 'ダイヤモンド', type: 'currency' },
-    { key: 'likes' as SortKey, label: 'いいね', type: 'number' },
+    { key: 'giftGivers' as SortKey, label: 'ギフト贈呈者', type: 'number' },
     { key: 'followers' as SortKey, label: '新規フォロワー', type: 'number' },
+    { key: 'commenters' as SortKey, label: 'コメントした視聴者', type: 'number' },
+    { key: 'likes' as SortKey, label: 'いいね', type: 'number' },
+    { key: 'shares' as SortKey, label: 'シェア', type: 'number' },
+    { key: 'liveTime' as SortKey, label: 'LIVE時間', type: 'time' },
+    { key: 'liveCount' as SortKey, label: 'LIVEの合計数', type: 'number' },
     { key: 'views' as SortKey, label: '視聴数', type: 'number' },
-    { key: 'liveTime' as SortKey, label: '配信時間', type: 'time' },
-    { key: 'liveCount' as SortKey, label: '配信回数', type: 'number' },
-    { key: 'maxConcurrent' as SortKey, label: '最高同時視聴', type: 'number' },
+    { key: 'uniqueViewers' as SortKey, label: 'ユニーク視聴者数', type: 'number' },
+    { key: 'avgViewTime' as SortKey, label: '平均視聴時間', type: 'time' },
+    { key: 'maxConcurrent' as SortKey, label: '最高同時視聴者数', type: 'number' },
+    { key: 'avgConcurrent' as SortKey, label: '平均同時視聴者数', type: 'number' },
+    { key: 'diamonds' as SortKey, label: 'ダイヤモンド', type: 'currency' },
   ];
 
   return (
@@ -203,20 +250,18 @@ const DataTable: React.FC<DataTableProps> = ({ data, onExport, className = '' })
             <div>
               <h3 className="text-lg font-semibold text-gray-900">データテーブル</h3>
               <p className="text-sm text-gray-500">
-                {filteredAndSortedData.length} 件のデータ
+                {filteredData.length} 件のデータ
               </p>
             </div>
           </div>
           
-          {onExport && (
-            <button
-              onClick={onExport}
-              className="flex items-center space-x-2 px-4 py-2 bg-tiktok-primary text-white rounded-lg hover:bg-tiktok-primary/90 transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              <span>エクスポート</span>
-            </button>
-          )}
+          <button
+            onClick={handleExportXLSX}
+            className="flex items-center space-x-2 px-4 py-2 bg-tiktok-primary text-white rounded-lg hover:bg-tiktok-primary/90 transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            <span>XLSX エクスポート</span>
+          </button>
         </div>
 
         {/* 検索とページサイズ */}
@@ -259,7 +304,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, onExport, className = '' })
               {columns.map(column => (
                 <th
                   key={column.key}
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                   onClick={() => handleSort(column.key)}
                 >
                   <div className="flex items-center space-x-1">
@@ -272,13 +317,10 @@ const DataTable: React.FC<DataTableProps> = ({ data, onExport, className = '' })
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {paginatedData.map((row, index) => (
-              <tr key={row.date} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+              <tr key={`${row.date}-${index}`} className="hover:bg-gray-50">
                 {columns.map(column => (
-                  <td key={column.key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {column.key === 'date' 
-                      ? row[column.key]
-                      : formatValue(row[column.key] as number, column.type as any)
-                    }
+                  <td key={column.key} className="px-4 py-3 text-sm text-gray-900">
+                    {formatValue(row[column.key], column.type as any)}
                   </td>
                 ))}
               </tr>
@@ -292,8 +334,8 @@ const DataTable: React.FC<DataTableProps> = ({ data, onExport, className = '' })
         <div className="px-6 py-4 border-t border-gray-200">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-500">
-              {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, filteredAndSortedData.length)} 件 
-              / 全 {filteredAndSortedData.length} 件
+              {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, filteredData.length)} 件 
+              / 全 {filteredData.length} 件
             </div>
             
             <div className="flex items-center space-x-2">
