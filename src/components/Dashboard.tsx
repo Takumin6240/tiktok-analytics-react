@@ -50,7 +50,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
 
 
 
-  // PDFエクスポート
+  // スクリーンショットPDFエクスポート
   const handleScreenshotPdf = () => {
     setShowScreenshotModal(true);
   };
