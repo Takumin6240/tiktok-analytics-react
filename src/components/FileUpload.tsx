@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, FileText, AlertCircle, CheckCircle, X } from 'lucide-react';
+import { Upload, FileText, AlertCircle, CheckCircle, X, BarChart3, AlertTriangle } from 'lucide-react';
 import { parseMultipleCSVFiles } from '@/utils/csvParser';
 import type { FileUploadResult, CSVFileType } from '@/types';
 
@@ -17,6 +17,9 @@ const FileUpload: React.FC<FileUploadProps> = ({
 }) => {
   const [uploadedFiles, setUploadedFiles] = useState<FileUploadResult[]>([]);
   const [processingFiles, setProcessingFiles] = useState<string[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  const requiredFileTypes: CSVFileType[] = ['engagement', 'revenue', 'activity', 'viewer'];
 
   const getFileTypeLabel = (type: CSVFileType): string => {
     switch (type) {
@@ -38,6 +41,20 @@ const FileUpload: React.FC<FileUploadProps> = ({
       case 'unknown': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  // アップロード済みファイルの種類をチェック
+  const getUploadedFileTypes = (): CSVFileType[] => {
+    return uploadedFiles.map(file => file.type).filter(type => type !== 'unknown');
+  };
+
+  const getMissingFileTypes = (): CSVFileType[] => {
+    const uploadedTypes = getUploadedFileTypes();
+    return requiredFileTypes.filter(type => !uploadedTypes.includes(type));
+  };
+
+  const isAllFilesUploaded = (): boolean => {
+    return getMissingFileTypes().length === 0;
   };
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -70,18 +87,52 @@ const FileUpload: React.FC<FileUploadProps> = ({
         onError(`ファイル処理エラー:\n${errorMessages.join('\n')}`);
       }
 
-      // 成功したファイルのみを処理
+      // 成功したファイルのみを処理（既存のファイルと重複チェック）
       const successfulResults = results.filter(r => !r.error);
       if (successfulResults.length > 0) {
-        setUploadedFiles(successfulResults);
-        onFilesProcessed(successfulResults);
+        // 重複するファイルタイプをチェック
+        const newTypes = successfulResults.map(r => r.type);
+        const existingTypes = getUploadedFileTypes();
+        const duplicateTypes = newTypes.filter(type => existingTypes.includes(type) && type !== 'unknown');
+        
+        if (duplicateTypes.length > 0) {
+          const duplicateLabels = duplicateTypes.map(type => getFileTypeLabel(type));
+          onError(`同じ種類のファイルが既にアップロードされています: ${duplicateLabels.join(', ')}`);
+          return;
+        }
+
+        const newFiles = [...uploadedFiles, ...successfulResults];
+        setUploadedFiles(newFiles);
+        
+        // 4種類すべてアップロードされていない場合は分析を開始しない
+        if (!isAllFilesUploaded()) {
+          // ファイルのみ保存、分析は開始しない
+          console.log('ファイルをアップロードしました。4種類すべてアップロード後に分析ボタンを押してください。');
+        }
       }
     } catch (error) {
       onError(`ファイル処理中にエラーが発生しました: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setProcessingFiles([]);
     }
-  }, [onFilesProcessed, onError]);
+  }, [uploadedFiles, onError]);
+
+  const handleAnalyze = async () => {
+    if (!isAllFilesUploaded()) {
+      onError('4種類すべてのCSVファイルをアップロードしてから分析を開始してください');
+      return;
+    }
+
+    setIsAnalyzing(true);
+    try {
+      // 分析を開始
+      onFilesProcessed(uploadedFiles);
+    } catch (error) {
+      onError(`分析開始中にエラーが発生しました: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -95,12 +146,12 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const removeFile = (index: number) => {
     const newFiles = uploadedFiles.filter((_, i) => i !== index);
     setUploadedFiles(newFiles);
-    onFilesProcessed(newFiles);
+    // 個別ファイル削除時は分析画面に遷移しない
   };
 
   const clearAllFiles = () => {
     setUploadedFiles([]);
-    onFilesProcessed([]);
+    // ファイルをクリアするだけで、分析画面には遷移しない
   };
 
   return (
@@ -230,12 +281,97 @@ const FileUpload: React.FC<FileUploadProps> = ({
           </div>
 
           {/* ファイルタイプの不足を表示 */}
-          {uploadedFiles.length < 4 && (
-            <div className="mt-4 p-3 bg-yellow-50 rounded-lg">
-              <p className="text-sm text-yellow-800">
-                完全な分析には4種類すべてのCSVファイルが必要です。
-                不足しているファイルがある場合、一部の機能が制限される可能性があります。
-              </p>
+          {uploadedFiles.length > 0 && (
+            <div className="mt-4">
+              {/* ファイル状況の表示 */}
+              <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                <h4 className="font-medium text-gray-900 mb-3">アップロード状況</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {requiredFileTypes.map((type) => {
+                    const isUploaded = getUploadedFileTypes().includes(type);
+                    return (
+                      <div
+                        key={type}
+                        className={`flex items-center space-x-2 p-2 rounded ${
+                          isUploaded 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {isUploaded ? (
+                          <CheckCircle className="w-4 h-4" />
+                        ) : (
+                          <AlertTriangle className="w-4 h-4" />
+                        )}
+                        <span className="text-sm font-medium">
+                          {getFileTypeLabel(type)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* エラー・警告メッセージ */}
+              {!isAllFilesUploaded() && (
+                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-start space-x-2">
+                    <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-yellow-800">
+                        分析を開始するには4種類すべてのCSVファイルが必要です
+                      </p>
+                      <p className="text-sm text-yellow-700 mt-1">
+                        不足しているファイル: {getMissingFileTypes().map(type => getFileTypeLabel(type)).join(', ')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 分析ボタン */}
+              <div className="flex justify-center">
+                <button
+                  onClick={handleAnalyze}
+                  disabled={!isAllFilesUploaded() || isAnalyzing || isProcessing}
+                  className={`
+                    flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-all duration-200
+                    ${isAllFilesUploaded() && !isAnalyzing && !isProcessing
+                      ? 'bg-tiktok-primary text-white hover:bg-tiktok-primary/90 shadow-lg hover:shadow-xl'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }
+                  `}
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                      <span>分析中...</span>
+                    </>
+                  ) : (
+                    <>
+                      <BarChart3 className="w-5 h-5" />
+                      <span>
+                        {isAllFilesUploaded() 
+                          ? 'データ分析を開始' 
+                          : `分析開始 (${uploadedFiles.length}/4)`
+                        }
+                      </span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* 成功メッセージ */}
+              {isAllFilesUploaded() && !isAnalyzing && (
+                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <p className="text-sm font-medium text-green-800">
+                      4種類すべてのCSVファイルがアップロードされました！分析ボタンを押して開始してください。
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
