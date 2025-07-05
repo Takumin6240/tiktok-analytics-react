@@ -164,7 +164,6 @@ export class BrowserPdfGenerator {
     // 各セクションをキャプチャ
     for (let i = 0; i < this.options.sections.length; i++) {
       const section = this.options.sections[i];
-      const isLastSection = i === this.options.sections.length - 1;
       
       try {
         // データテーブルの場合は「全て表示」に設定
