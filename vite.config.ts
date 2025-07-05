@@ -20,6 +20,7 @@ export default defineConfig({
     sourcemap: true,
     assetsDir: 'assets',
     rollupOptions: {
+      external: ['puppeteer'],
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
@@ -34,5 +35,6 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'recharts', 'papaparse'],
+    exclude: ['puppeteer']
   },
 })

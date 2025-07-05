@@ -8,7 +8,8 @@ import {
   Calendar,
   Activity,
   Clock,
-  Download
+  Download,
+  Camera
 } from 'lucide-react';
 import KPICard from './KPICard';
 import AnalyticsChart from './AnalyticsChart';
@@ -16,6 +17,7 @@ import DataTable from './DataTable';
 import DetailedStats from './DetailedStats';
 import { calculateKPIMetrics, generateChartData, generateInsights } from '@/utils/analytics';
 import { exportEnhancedExcel } from '@/utils/enhancedExcelExport';
+import ScreenshotExportModal from './ScreenshotExportModal';
 import type { AnalyticsData, KPIMetrics, PerformanceInsight } from '@/types';
 
 interface DashboardProps {
@@ -25,6 +27,7 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
   const [selectedMetric, setSelectedMetric] = useState<string>('diamonds');
+  const [showScreenshotModal, setShowScreenshotModal] = useState(false);
 
 
   // KPI計算
@@ -46,6 +49,11 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
   }, [data, selectedMetric, isLoading]);
 
 
+
+  // スクリーンショットPDFエクスポート
+  const handleScreenshotPdf = () => {
+    setShowScreenshotModal(true);
+  };
 
   // XLSX エクスポート
   const handleExportXLSX = async () => {
@@ -106,6 +114,13 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
         </div>
         
         <div className="flex items-center space-x-3">
+          <button
+            onClick={handleScreenshotPdf}
+            className="flex items-center space-x-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-lg font-semibold shadow-lg"
+          >
+            <Camera className="w-5 h-5" />
+            <span>スクリーンショットPDF</span>
+          </button>
           <button
             onClick={handleExportXLSX}
             className="flex items-center space-x-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-lg font-semibold shadow-lg"
@@ -301,6 +316,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
                 value={selectedMetric}
                 onChange={(e) => setSelectedMetric(e.target.value)}
                 className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-tiktok-primary focus:border-transparent"
+                data-metric-selector="true"
               >
                 <option value="diamonds">ダイヤモンド</option>
                 <option value="likes">いいね</option>
@@ -374,6 +390,12 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
           kpis={kpis}
         />
       </div>
+
+      {/* スクリーンショットエクスポートモーダル */}
+      <ScreenshotExportModal
+        isOpen={showScreenshotModal}
+        onClose={() => setShowScreenshotModal(false)}
+      />
     </div>
   );
 };

@@ -219,11 +219,7 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
   };
 
   return (
-    <div 
-      className={`bg-white rounded-xl border border-gray-200 p-6 shadow-sm ${className}`}
-      data-chart={dataChart}
-      data-chart-title={dataChartTitle}
-    >
+    <div className={`bg-white rounded-xl border border-gray-200 shadow-sm p-6 ${className}`} data-chart={dataChart} data-chart-title={dataChartTitle}>
       {/* ヘッダー */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
@@ -233,18 +229,17 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
           <div>
             <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
             <p className="text-sm text-gray-500">
-              {filteredData.length} データポイント
+              {filteredData.length} 件のデータポイント
             </p>
           </div>
         </div>
-
-        {/* 期間フィルター */}
+        
         <div className="flex items-center space-x-2">
           <Filter className="w-4 h-4 text-gray-400" />
           <select
             value={selectedPeriod}
             onChange={(e) => setSelectedPeriod(e.target.value as '7d' | '30d' | 'all')}
-            className="text-sm border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-tiktok-primary focus:border-transparent"
+            className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-tiktok-primary focus:border-transparent"
           >
             <option value="7d">過去7日</option>
             <option value="30d">過去30日</option>

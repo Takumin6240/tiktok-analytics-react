@@ -111,7 +111,7 @@ const DetailedStats: React.FC<DetailedStatsProps> = ({ data, kpis, className = '
   };
 
   return (
-    <div className={`bg-white rounded-xl border border-gray-200 shadow-sm ${className}`} data-detailed-stats="container">
+    <div className={`bg-white rounded-xl border border-gray-200 shadow-sm ${className}`} data-stats-section="true">
       <div className="p-6">
         <div className="flex items-center space-x-3 mb-6">
           <div className="p-2 bg-tiktok-primary/10 rounded-lg">

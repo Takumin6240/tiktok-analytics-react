@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { ChevronUp, ChevronDown, Download, Search, Calendar } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import * as ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import type { AnalyticsData } from '@/types';
 
 interface DataTableProps {
@@ -34,6 +35,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, className = '' }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [showAll, setShowAll] = useState(false);
 
   // データを統合してテーブル行を作成
   const tableData = useMemo(() => {
@@ -148,9 +150,10 @@ const DataTable: React.FC<DataTableProps> = ({ data, className = '' }) => {
 
   // ページネーション
   const paginatedData = useMemo(() => {
+    if (showAll) return filteredData;
     const startIndex = (currentPage - 1) * pageSize;
     return filteredData.slice(startIndex, startIndex + pageSize);
-  }, [filteredData, currentPage, pageSize]);
+  }, [filteredData, currentPage, pageSize, showAll]);
 
   const totalPages = Math.ceil(filteredData.length / pageSize);
 
@@ -184,7 +187,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, className = '' }) => {
   };
 
   // XLSX エクスポート
-  const handleExportXLSX = () => {
+  const handleExportXLSX = async () => {
     const exportData = filteredData.map(row => ({
       '日付': row.date,
       'ギフト贈呈者': row.giftGivers,
@@ -202,12 +205,32 @@ const DataTable: React.FC<DataTableProps> = ({ data, className = '' }) => {
       'ダイヤモンド': row.diamonds
     }));
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'TikTokAnalytics');
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('TikTokAnalytics');
     
-    const filename = `tiktok-analytics-${new Date().toISOString().split('T')[0]}.xlsx`;
-    XLSX.writeFile(workbook, filename);
+    // ヘッダー行を追加
+    const headers = Object.keys(exportData[0] || {});
+    worksheet.addRow(headers);
+    
+    // データ行を追加
+    exportData.forEach((row) => {
+      worksheet.addRow(Object.values(row));
+    });
+    
+    // スタイリング
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.columns.forEach((column) => {
+      column.width = 15;
+    });
+
+    try {
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      saveAs(blob, `tiktok-analytics-${new Date().toISOString().split('T')[0]}.xlsx`);
+    } catch (error) {
+      console.error('Excel export error:', error);
+      alert('エクスポートに失敗しました。');
+    }
   };
 
   // ソートアイコン
@@ -239,7 +262,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, className = '' }) => {
   ];
 
   return (
-    <div className={`bg-white rounded-xl border border-gray-200 shadow-sm ${className}`}>
+    <div className={`bg-white rounded-xl border border-gray-200 shadow-sm ${className}`} data-table-container="true">
       {/* ヘッダー */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">
@@ -280,17 +303,26 @@ const DataTable: React.FC<DataTableProps> = ({ data, className = '' }) => {
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-500">表示件数:</span>
             <select
-              value={pageSize}
+              value={showAll ? 'all' : pageSize}
               onChange={(e) => {
-                setPageSize(Number(e.target.value));
+                const value = e.target.value;
+                if (value === 'all') {
+                  setShowAll(true);
+                  setPageSize(filteredData.length);
+                } else {
+                  setShowAll(false);
+                  setPageSize(Number(value));
+                }
                 setCurrentPage(1);
               }}
               className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-tiktok-primary focus:border-transparent"
+              data-items-per-page="true"
             >
               <option value={10}>10</option>
               <option value={25}>25</option>
               <option value={50}>50</option>
               <option value={100}>100</option>
+              <option value="all">全て表示</option>
             </select>
           </div>
         </div>
@@ -330,7 +362,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, className = '' }) => {
       </div>
 
       {/* ページネーション */}
-      {totalPages > 1 && (
+      {totalPages > 1 && !showAll && (
         <div className="px-6 py-4 border-t border-gray-200">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-500">
