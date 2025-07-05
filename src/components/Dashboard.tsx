@@ -15,7 +15,7 @@ import AnalyticsChart from './AnalyticsChart';
 import DataTable from './DataTable';
 import DetailedStats from './DetailedStats';
 import { calculateKPIMetrics, generateChartData, generateInsights } from '@/utils/analytics';
-import { exportEnhancedPDF } from '@/utils/enhancedPdfExport';
+import { exportComponentBasedPDF } from '@/utils/componentBasedPdfExport';
 import type { AnalyticsData, KPIMetrics, PerformanceInsight } from '@/types';
 
 interface DashboardProps {
@@ -45,12 +45,12 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
     return generateChartData(data, selectedMetric);
   }, [data, selectedMetric, isLoading]);
 
-  // PDF エクスポート
+  // PDF エクスポート (新しいコンポーネントベース)
   const handleExportPDF = async () => {
     try {
-      await exportEnhancedPDF(data, kpis, insights, {
+      await exportComponentBasedPDF(data, kpis, insights, {
         format: 'pdf',
-        includeCharts: false,
+        includeCharts: true,
         sections: {
           summary: true,
           engagement: true,
@@ -62,7 +62,8 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
       });
     } catch (error) {
       console.error('PDF export failed:', error);
-      alert('PDFエクスポートに失敗しました。');
+      const errorMessage = error instanceof Error ? error.message : '不明なエラー';
+      alert('PDFエクスポートに失敗しました: ' + errorMessage);
     }
   };
 
@@ -162,6 +163,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
           icon={Diamond}
           color="primary"
           subtitle="収益"
+          data-kpi-card="diamonds"
         />
         <KPICard
           title="総いいね"
@@ -169,6 +171,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
           icon={Heart}
           color="secondary"
           subtitle="エンゲージメント"
+          data-kpi-card="likes"
         />
         <KPICard
           title="新規フォロワー"
@@ -176,6 +179,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
           icon={Users}
           color="success"
           subtitle="成長"
+          data-kpi-card="followers"
         />
         <KPICard
           title="総視聴数"
@@ -183,6 +187,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
           icon={Eye}
           color="info"
           subtitle="リーチ"
+          data-kpi-card="views"
         />
         <KPICard
           title="アクティブ日数"
@@ -190,6 +195,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
           icon={Calendar}
           color="warning"
           subtitle="配信頻度"
+          data-kpi-card="active-days"
         />
         <KPICard
           title="総配信時間"
@@ -197,6 +203,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
           icon={Clock}
           color="info"
           subtitle="配信量"
+          data-kpi-card="live-time"
         />
         <KPICard
           title="エンゲージメント率"
@@ -204,6 +211,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
           icon={TrendingUp}
           color="success"
           subtitle="平均"
+          data-kpi-card="engagement-rate"
         />
         <KPICard
           title="最高同時視聴者数"
@@ -211,6 +219,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
           icon={Activity}
           color="primary"
           subtitle="ピーク"
+          data-kpi-card="peak-viewers"
         />
       </div>
 
@@ -222,6 +231,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
           icon={Diamond}
           color="primary"
           subtitle="総計"
+          data-kpi-card="gift-givers"
         />
         <KPICard
           title="コメント者"
@@ -229,6 +239,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
           icon={Users}
           color="secondary"
           subtitle="総計"
+          data-kpi-card="commenters"
         />
         <KPICard
           title="シェア数"
@@ -236,6 +247,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
           icon={TrendingUp}
           color="success"
           subtitle="総計"
+          data-kpi-card="shares"
         />
         <KPICard
           title="配信回数"
@@ -243,6 +255,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
           icon={Activity}
           color="info"
           subtitle="総計"
+          data-kpi-card="live-count"
         />
         <KPICard
           title="ユニーク視聴者"
@@ -250,6 +263,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
           icon={Eye}
           color="warning"
           subtitle="総計"
+          data-kpi-card="unique-viewers"
         />
         <KPICard
           title="平均視聴時間"
@@ -257,6 +271,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
           icon={Clock}
           color="info"
           subtitle="平均"
+          data-kpi-card="avg-view-time"
         />
         <KPICard
           title="平均同時視聴者"
@@ -264,6 +279,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
           icon={Users}
           color="success"
           subtitle="平均"
+          data-kpi-card="avg-concurrent"
         />
         <KPICard
           title="配信あたり時間"
@@ -271,17 +287,19 @@ const Dashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
           icon={Clock}
           color="primary"
           subtitle="平均"
+          data-kpi-card="avg-stream-time"
         />
       </div>
 
       {/* パフォーマンス洞察 */}
       {insights.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm" data-insight="container">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">パフォーマンス洞察</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {insights.map((insight, index) => (
               <div
                 key={index}
+                data-insight={`item-${index}`}
                 className={`p-4 rounded-lg border-l-4 ${
                   insight.type === 'success' ? 'bg-green-50 border-green-400' :
                   insight.type === 'warning' ? 'bg-yellow-50 border-yellow-400' :

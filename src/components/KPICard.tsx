@@ -10,6 +10,7 @@ interface KPICardProps {
   color: 'primary' | 'secondary' | 'success' | 'warning' | 'info';
   subtitle?: string;
   isLoading?: boolean;
+  'data-kpi-card'?: string;
 }
 
 const KPICard: React.FC<KPICardProps> = ({
@@ -21,6 +22,7 @@ const KPICard: React.FC<KPICardProps> = ({
   color,
   subtitle,
   isLoading = false,
+  'data-kpi-card': dataKpiCard,
 }) => {
   const getColorClasses = (color: string) => {
     switch (color) {
@@ -79,7 +81,7 @@ const KPICard: React.FC<KPICardProps> = ({
 
   if (isLoading) {
     return (
-      <div className={`p-6 rounded-xl border ${colorClasses.border} ${colorClasses.bg} animate-pulse`}>
+      <div className={`p-6 rounded-xl border ${colorClasses.border} ${colorClasses.bg} animate-pulse`} data-kpi-card={dataKpiCard}>
         <div className="flex items-center justify-between">
           <div className="space-y-3">
             <div className="h-4 bg-gray-200 rounded w-20"></div>
@@ -93,7 +95,7 @@ const KPICard: React.FC<KPICardProps> = ({
   }
 
   return (
-    <div className={`p-6 rounded-xl border ${colorClasses.border} ${colorClasses.bg} hover:shadow-lg transition-all duration-200 group`}>
+    <div className={`p-6 rounded-xl border ${colorClasses.border} ${colorClasses.bg} hover:shadow-lg transition-all duration-200 group`} data-kpi-card={dataKpiCard}>
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
